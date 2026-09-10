@@ -17,14 +17,14 @@ trap 'echo "error at $LINENO", command: $BASH_COMMAND" ' ERR
 
 USERID=$(id -u)
 
-if[$USERID -ne 0]; then
+if [ $USERID -ne 0 ]; then
     echo -e "$TIMESTAMP [ERROR]....$R Please run this script with root access $N" | tee -a $LOGS_FILE
     exit 1
 fi
 
 VALIDATE()
 {
-    if[$1 -ne 0]; then
+    if [ $1 -ne 0 ]; then
         echo -e "TIMESTAMP [ERROR] .... $2 ....$R FAILURE $N" | tee -a $LOGS_FILE
         exit 1
     else
