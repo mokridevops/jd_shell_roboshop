@@ -39,7 +39,7 @@ VALIDATE $? "Copying Mongo Repo"
 dnf install mongodb-org -y &>> $LOGS_FILE
 VALIDATE $? "Installing MongoDB"
 
-systemctl enable --now mongod
+systemctl enable --now mongod $>> $LOGS_FILE
 VALIDATE $? "enabling and starting mongod"
 
 sed 's/127.0.0.1/0.0.0.0/g' /etc/mongod.conf
