@@ -7,17 +7,17 @@ DOMAIN_NAME="mokridevops.shop" #replace with your domain name
 for instance in $@
 do
   echo "Launching instance - $instance"
-    INSTANCE_ID="aws ec2 run-instances \
+    INSTANCE_ID=$(aws ec2 run-instances \
     --image-id ami-0220d79f3f480ecf5 \
     --instance-type t3.micro \
     --security-groups "roboshop-common" "roboshop-$instance" \
-    --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value="roboshop-$instance"}]' \
+    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=roboshop-$instance}]" \
     --query 'Instances[0].InstanceId' \
-    --output text"
-
+    --output text
+    )
     echo "Instance id: $INSTANCE_ID"
 
-    if [ $instance == "frontend" ]; then
+    if [ $instance == "frontend" ]; then    
 
        IP=$(aws ec2 describe-instances --instance-ids i-0eeead6cb4a0cc05e \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
