@@ -37,22 +37,28 @@ do
 
     aws route53 change-resource-record-sets \
     --hosted-zone-id $ZONE_ID \
-    --change-batch '{ 
-  "Comment": "Update record to new IP", 
-  "Changes": [
-    {
-      "Action": "UPSERT",
-      "ResourceRecordSet": {
-        "Name": "R53_RECORD",
-        "Type": "A",
-        "TTL": 1,
-        "ResourceRecords": [
-          { "Value": "$IP" }
-        ]
-      }
-    }
-  ]
-}
+    --change-batch '
+        { 
+            "Comment": "Update record to new IP", 
+            "Changes": 
+            [
+             {
+                "Action": "UPSERT",
+                "ResourceRecordSet": 
+                {
+                    "Name": "'$R53_RECORD'",
+                    "Type": "A",
+                    "TTL": 1,
+                    "ResourceRecords": 
+                    [
+                        { 
+                    "Value": "'$IP'" 
+                        }
+                    ]
+                }
+             }
+            ]
+        }
 '
 
 
