@@ -80,15 +80,24 @@ VALIDATE $? "added mongo repo"
 dnf install mongodb-mongosh -y &>> $LOGS_FILE
 VALIDATE $? "installed mongodb client"
 
-mongosh --host mongodb.mokridevops.shop </app/db/master-data.js
+mongosh --host mongodb.mokridevops.shop </app/db/master-data.js &>> $LOGS_FILE
+VALIDATE $? "load master data"
 
-mongosh --host mongodb.mokridevops.shop
+mongosh --host mongodb.mokridevops.shop &>> $LOGS_FILE
+VALIDATE $? "connect to mongodb client"
 
-show dbs
+show dbs &>> $LOGS_FILE
+VALIDATE $? "show databases"
 
-use catalogue
-show collections
+use catalogue &>> $LOGS_FILE
+VALIDATE $? "Use Catalogue"
+
+show collections &>> $LOGS_FILE
+VALIDATE $? "Show collections"
+
 db.products.find()
+VALIDATE $? "GET items in collection"
 
 systemctl enable catalogue &>> $LOGS_FILE
 systemctl restart configuartion &>> $LOGS_FILE
+VALIDATE $? "enable and restarting catalogue"
