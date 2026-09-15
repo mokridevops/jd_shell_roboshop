@@ -44,7 +44,7 @@ VALIDATE $? "enabling nodejs 20"
 dnf install nodejs -y &>> $LOGS_FILE
 VALIDATE $? "installing nodejs"
 
-id roboshop
+id roboshop 
 if [ $? -ne 0]; then
 useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>> $LOGS_FILE
 VALIDATE $? "creating roboshop system user"
@@ -79,3 +79,16 @@ VALIDATE $? "added mongo repo"
 
 dnf install mongodb-mongosh -y &>> $LOGS_FILE
 VALIDATE $? "installed mongodb client"
+
+mongosh --host mongodb.mokridevops.shop </app/db/master-data.js
+
+mongosh --host mongodb.mokridevops.shop
+
+show dbs
+
+use catalogue
+show collections
+db.products.find()
+
+systemctl enable catalogue &>> $LOGS_FILE
+systemctl restart configuartion &>> $LOGS_FILE
