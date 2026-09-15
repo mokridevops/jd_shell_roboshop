@@ -1,52 +1,65 @@
 #!/bin/bash
 
-LOGS_FOLDER="/var/log/roboshop"
-LOGS_FILE="$LOGS_FOLDER/$0.log"
+AMI_ID="ami-0220d79f3f480ecf5"
+ZONE_ID="Z00264691Y3EOCCIR7OFV" #replace with your zone id
+DOMAIN_NAME="mokridevops.shop" #replace with your domain name
 
-sudo mkdir -p $LOGS_FOLDER
-sudo chown -R ec2-user:ec2-user $LOGS_FOLDER
-sudo chmod -R 755 $LOGS_FOLDER
+for instance in $@
+do
+  echo "Launching instance - $instance"
+    INSTANCE_ID=$(aws ec2 run-instances \
+    --image-id ami-0220d79f3f480ecf5 \
+    --instance-type t3.micro \
+    --security-groups "roboshop-common" "roboshop-$instance" \
+    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=roboshop-$instance}]" \
+    --query 'Instances[0].InstanceId' \
+    --output text
+    )
+    echo "Instance id: $INSTANCE_ID"
 
-TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
-R="\e[31m"
-G="\e[32m"
-Y="\e[33m"
-N="\e[0m"
+    if [ $instance == "frontend" ]; then    
 
-trap 'echo "error at $LINENO", command: $BASH_COMMAND" ' ERR
+       IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --output text)
+      
+       R53_RECORD="$DOMAIN_NAME"
 
-USERID=$(id -u)
-
-if [ $USERID -ne 0 ]; then
-    echo -e "$TIMESTAMP [ERROR]....$R Please run this script with root access $N" | tee -a $LOGS_FILE
-    exit 1
-fi
-
-VALIDATE()
-{
-    if [ $1 -ne 0 ]; then
-        echo -e "TIMESTAMP [ERROR] .... $2 ....$R FAILURE $N" | tee -a $LOGS_FILE
-        exit 1
     else
-        echo -e "TIMESTAMP [INFO] ....$2 .....$G SUCCESS $N" | tee -a $LOGS_FILE
-    fi 
-}
+       IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID \
+            --query 'Reservations[*].Instances[*].PrivateIpAddress' \
+            --output text)
+    R53_RECORD="$instance.$DOMAIN_NAME"
+    fi
 
 
-dnf module disable redis -y >> $LOGS_FILE
-dnf module enable redis:7 -y >> $LOGS_FILE
-VALIDATE $? "Disable and Enable redis"
+    # Updating Route 53 record
+
+    aws route53 change-resource-record-sets \
+    --hosted-zone-id $ZONE_ID \
+    --change-batch '
+        { 
+            "Comment": "Update record to new IP", 
+            "Changes": 
+            [
+             {
+                "Action": "UPSERT",
+                "ResourceRecordSet": 
+                {
+                    "Name": "'$R53_RECORD'",
+                    "Type": "A",
+                    "TTL": 1,
+                    "ResourceRecords": 
+                    [
+                        { 
+                    "Value": "'$IP'" 
+                        }
+                    ]
+                }
+             }
+            ]
+        }
+'
 
 
-dnf install redis -y  >> $LOGS_FILE
-VALIDATE $? "Installing redis"
-
-
-
-sed -e 's/127.0.0.1/0.0.0.0/g' -e '/protected-mode/ c protected-mode no' /etc/redis/redis.conf &>> $LOGS_FILE
-VALIDATE $? "Allowing remote connections to redis"
-
-systemctl enable redis >> $LOGS_FILE
-systemctl start redis >> $LOGS_FILE
-VALIDATE $? "enabling and restarting redis"
-
+done
